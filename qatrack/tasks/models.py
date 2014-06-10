@@ -2,7 +2,8 @@ from django.db import models
 from django.contrib.auth.models import User, Group
 from django.utils.translation import ugettext as _
 from django.core.validators import MinLengthValidator
-# Create your models here.
+
+from qatrack.units.models import Unit
 
 
 class Category(models.Model):
@@ -39,6 +40,9 @@ class Task(models.Model):
     )
 
     name = models.CharField(verbose_name=_("Name"), max_length=100)
+    unit = models.ForeignKey(Unit, verbose_name=_("Unit"),
+                             help_text=_("Assign this task to a unit for easy filtering"),
+                             null=True, blank=True)
     description = models.TextField(verbose_name=_("Description"), validators=[MinLengthValidator(100)],
                                    help_text=_("Describe the meaning of the task and what should be done"))
     due_date = models.DateField(verbose_name=_("Due date"), help_text=_("Set due date"))
