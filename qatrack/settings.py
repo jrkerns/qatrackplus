@@ -220,7 +220,9 @@ INSTALLED_APPS = [
     'qatrack.data_tables',
     'qatrack.notifications',
     'qatrack.contacts',
+    'qatrack.tasks',
 
+    'crispy_forms',
     'south',
     'admin_views',
 ]
