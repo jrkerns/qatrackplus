@@ -11,6 +11,7 @@ urlpatterns = patterns('',
 
     url(r'^accounts/', include('qatrack.accounts.urls')),
     url(r'^qa/', include('qatrack.qa.urls')),
+    url(r'^tasks/', include('qatrack.tasks.urls')),
 
     # Uncomment the next line to enable the admin:
     url(r'^admin/', include(admin.site.urls)),
