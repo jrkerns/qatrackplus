@@ -371,3 +371,6 @@ try:
     from local_settings import *
 except ImportError:
     pass
+
+# Crispy forms settings
+CRISPY_TEMPLATE_PACK = 'bootstrap'
