@@ -1,0 +1,105 @@
+{% load staticfiles %}
+
+{#        jQuery#}
+    <script src="http://code.jquery.com/jquery-2.0.3.min.js"></script>
+
+{#    datatables.js#}
+    <script type="text/javascript" charset="utf8" src="http://cdn.datatables.net/1.10.0/js/jquery.dataTables.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="http://cdn.datatables.net/1.10.0/css/jquery.dataTables.css">
+    <script type="text/javascript" charset="utf8" src="http://cdn.datatables.net/plug-ins/be7019ee387/integration/bootstrap/3/dataTables.bootstrap.js"></script>
+
+{#    bootstrap#}
+    <link rel="stylesheet" type="text/css" href="http://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="http://cdn.datatables.net/plug-ins/be7019ee387/integration/bootstrap/3/dataTables.bootstrap.css">
+
+
+{#      custom table css #}
+    <link rel="stylesheet" href="{% static "css/table.css"  %}" type="text/css"/>
+
+      <h2>Task overview</h2>
+
+    <table id="example" class="table table-bordered" cellspacing="0" width="100%">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Unit</th>
+                <th>Due date</th>
+                <th>Overdue date</th>
+                <th>Status</th>
+        </tr>
+        </thead>
+
+        <tfoot>
+            <tr>
+                <th id="id-footer-name">Name</th>
+                <th id="id-footer-category">Category</th>
+                <th id="id-footer-unit">Unit</th>
+                <th id="id-footer-duedate">Due date</th>
+                <th id="id-footer-overduedate">Overdue date</th>
+                <th id="id-footer-status">Status</th>
+            </tr>
+        </tfoot>
+
+        <tbody>
+            {% for task in Tasks %}
+                {% if task.is_past_overdue and task.status != 'Reviewed' %}
+                    <tr class="danger">
+                {% elif task.is_past_due and task.status != 'Reviewed' %}
+                    <tr class="warning">
+                {% else %}
+                    <tr class="success">
+                {% endif %}
+                        <td>{{ task.name }}</td>
+                        <td>{{ task.category }}</td>
+                        <td>{{ task.unit }}</td>
+                        <td>{{ task.due_date }}</td>
+                        <td>{{ task.overdue_date }}</td>
+                        <td>{{ task.status }}</td>
+                    </tr>
+            {%  endfor %}
+        </tbody>
+    </table>
+
+    <script type='text/javascript'>
+        $(document).ready(function() {
+            // DataTable
+            var table = $('#example').DataTable();
+
+            // Text filters
+            var title = $('#id-footer-name').eq( $(this).index() ).text();
+            $('#id-footer-name').html( '<input type="text" placeholder="Search '+title+'" />' );
+
+            $( 'input', table.column( 0 ).footer() ).on( 'keyup change', function () {
+                table
+                    .column( 0 )
+                    .search( this.value )
+                    .draw();
+            } );
+
+            // Select filters
+            var selectfiltercolumn1 = $('#id-footer-category');
+            var selectfiltercolumn2 = $('#id-footer-unit');
+            var selectfiltercolumn3 = $('#id-footer-status');
+            var selectfiltercolumns = [selectfiltercolumn1, selectfiltercolumn2, selectfiltercolumn3];
+            var selectfiltercolumnnumbers = [1, 2, 5];
+
+            $.each(selectfiltercolumns, function ( i ) {
+                console.log(selectfiltercolumnnumbers[i]);
+                console.log($(this).attr("id"));
+
+                var select = $('<select><option value=""></option></select>')
+                    .appendTo( $(this).empty() )
+                    .on( 'change', function () {
+                        table.column( selectfiltercolumnnumbers[i] )
+                            .search( '^'+$(this).val()+'$', true, false )
+                            .draw();
+                    } );
+
+                table.column( selectfiltercolumnnumbers[i] ).data().unique().sort().each( function ( d, j ) {
+                    select.append( '<option value="'+d+'">'+d+'</option>' )
+                } );
+            } );
+        } );
+    </script>
+

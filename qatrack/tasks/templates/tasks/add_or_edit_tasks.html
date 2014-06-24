@@ -1,0 +1,59 @@
+{% extends "site_base.html" %}
+
+{% load staticfiles %}
+{% load crispy_forms_tags %}
+
+{% block head_title %}Add/edit or perform task{% endblock %}
+
+{% block body %}
+
+    {% crispy form %}
+
+    {# datetimepicker #}
+    <link rel="stylesheet" type="text/css" href="{% static "datetimepicker/jquery.datetimepicker.css" %}"/>
+    <script src="{% static "datetimepicker/jquery.datetimepicker.js" %}"></script>
+    {# bootstrap multiselect #}
+    <script type="text/javascript" src="{% static "bootstrap-multiselect-master/js/bootstrap-multiselect.js" %}"></script>
+    <link rel="stylesheet" href="{% static "bootstrap-multiselect-master/css/bootstrap-multiselect.css"  %}" type="text/css"/>
+    {# readonly #}
+    <script type="text/javascript" src="{% static "readonly/readonly.js" %}"></script>
+
+
+    <script type='text/javascript'>
+        $(document).ready(function() {
+            $('.selectmultiple').multiselect({
+                enableFiltering: true
+            });
+
+            var can_edit = '{{ can_edit }}';
+            var can_perform = '{{ can_perform }}';
+
+            if (can_edit == 'True') {
+                $('#id_due_date, #id_overdue_date').datetimepicker({
+                    timepicker:false,
+                    format:'Y-m-d'
+                });
+            }
+
+            if (can_edit == 'False') {
+                {# remove the status option to review #}
+                $("#id_status option[value='reviewed']").remove();
+                {# set the desired fields to readyonly #}
+                $("#id_name").prop('readonly', true);
+                $("#id_category").readonly();
+                $("#id_description").prop('readonly', true);
+                $("#id_unit").readonly();
+                $("#id_due_date").prop('readonly', true);
+                $("#id_overdue_date").prop('readonly', true);
+                $( "button, input[type='button'], input[class='multiselect']").addClass("disabled");
+            }
+
+            if (can_perform == 'False' && can_edit == 'False') {
+                $("#id_comment_for_reviewer").prop('readonly', true);
+                $(".form-actions").remove();
+            }
+
+        });
+    </script>
+
+{% endblock %}
