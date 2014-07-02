@@ -4,6 +4,8 @@ from django.db import models
 from django.contrib.auth.models import User, Group
 from django.utils.translation import ugettext as _
 from django.core.validators import MinLengthValidator
+from django.db.models import Q
+from django.core.cache import cache
 
 from qatrack.units.models import Unit
 
@@ -30,14 +32,32 @@ class Category(models.Model):
         return self.name
 
 
+class TaskManager(models.Manager):
+    """Get the tasks for which should be performed or reviewed by user"""
+    def tasks_to_perform(self, user):
+        return Task.objects.filter(
+            Q(status='Not done'),
+            Q(edit_users=user) | Q(edit_groups__in=user.groups.values_list('name', flat=True)) |
+            Q(perform_users=user) | Q(perform_groups__in=user.groups.values_list('name', flat=True)))
+
+    def tasks_to_review(self, user):
+        return Task.objects.filter(
+            Q(status='Waiting for review'),
+            Q(edit_users=user) | Q(edit_groups__in=user.groups.values_list('name', flat=True)))
+
+    def amount_of_tasks_for_user(self, user):
+        amount = self.tasks_to_perform(user).count() + self.tasks_to_review(user).count()
+        return amount
+
+
 class Task(models.Model):
     NOT_DONE = "Not done"
-    DONE = "Done"
+    DONE = "Waiting for review"
     REVIEWED = "Reviewed"
 
     status_choices = (
         (NOT_DONE, _("Not done")),
-        (DONE, _("Done")),
+        (DONE, _("Waiting for review")),
         (REVIEWED, _("Reviewed")),
     )
 
@@ -59,17 +79,19 @@ class Task(models.Model):
     edit_groups = models.ManyToManyField(Group, verbose_name=_("Groups edit"),
                                                 help_text=_("Groups who can edit this task"),
                                                 null=True, blank=True, related_name="groups edit")
-    perform_users = models.ManyToManyField(User, verbose_name=_("User performs"),
+    perform_users = models.ManyToManyField(User, verbose_name=_("Users perform"),
                                            help_text=_("Users who can perform this task"),
                                            null=True, blank=True, related_name="users perform")
     perform_groups = models.ManyToManyField(Group, verbose_name=_("Groups peform"),
                                             help_text=_("Groups who can perform this task"),
                                             null=True, blank=True, related_name="groups perform")
-    date_modified = models.DateTimeField(verbose_name=_("Date modified"), auto_now=True)
-    status = models.CharField(verbose_name=_("Status"), max_length=15, choices=status_choices, default="not_done")
+    date_created = models.DateTimeField(verbose_name=_("Date created"), auto_now_add=True)
+    status = models.CharField(verbose_name=_("Status"), max_length=20, choices=status_choices, default="not_done")
+
+    objects = TaskManager()
 
     class Meta:
-        ordering = ("-date_modified",)
+        ordering = ["-date_created"]
 
     def __unicode__(self):
         """return display representation of object"""
@@ -98,3 +120,22 @@ class Task(models.Model):
         if date.today() > self.overdue_date:
             return True
         return False
+
+    def list_perform_users(self):
+        users = list(self.perform_users.values_list('username', flat=True))
+        users.extend(list(self.edit_users.values_list('username', flat=True)))
+        users = set(users)
+        return users
+
+    def list_perform_groups(self):
+        groups = list(self.perform_groups.values_list('name', flat=True))
+        groups.extend(list(self.edit_groups.values_list('name', flat=True)))
+        groups = set(groups)
+        return groups
+
+    def list_edit_users(self):
+        return list(self.edit_users.values_list('username', flat=True))
+
+    def list_edit_groups(self):
+        return list(self.edit_groups.values_list('name', flat=True))
+
