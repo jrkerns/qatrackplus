@@ -1,5 +1,10 @@
+{% extends "site_base.html" %}
+
 {% load staticfiles %}
 
+{% block head_title %}View tasks{% endblock %}
+
+{% block end_body_extra_script %}
 {#        jQuery#}
     <script src="http://code.jquery.com/jquery-2.0.3.min.js"></script>
 
@@ -8,36 +13,53 @@
     <link rel="stylesheet" type="text/css" href="http://cdn.datatables.net/1.10.0/css/jquery.dataTables.css">
     <script type="text/javascript" charset="utf8" src="http://cdn.datatables.net/plug-ins/be7019ee387/integration/bootstrap/3/dataTables.bootstrap.js"></script>
 
+{% endblock %}
+{% block page_style %}
 {#    bootstrap#}
     <link rel="stylesheet" type="text/css" href="http://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="http://cdn.datatables.net/plug-ins/be7019ee387/integration/bootstrap/3/dataTables.bootstrap.css">
 
-
 {#      custom table css #}
-    <link rel="stylesheet" href="{% static "css/table.css"  %}" type="text/css"/>
+    <link rel="stylesheet" href="{% static "css/tasks.css"  %}" type="text/css"/>
+{% endblock %}
 
-      <h2>Task overview</h2>
 
-    <table id="example" class="table table-bordered" cellspacing="0" width="100%">
+{% block body %}
+    <p>
+        <a class="btn btn-primary" type="button" href="{% url tasks_my_tasks %}">My tasks</a>
+    </p>
+    <p>
+        <a class="btn btn-primary" type="button" href="{% url tasks_add_task %}">Add task</a>
+    </p>
+
+    <h2>Task overview</h2>
+
+    <table id="task-overview" class="table table-bordered" cellspacing="0" width="100%">
         <thead>
             <tr>
+                <th>Date created</th>
                 <th>Name</th>
+                <th>Who?</th>
                 <th>Category</th>
                 <th>Unit</th>
                 <th>Due date</th>
                 <th>Overdue date</th>
                 <th>Status</th>
+                <th>Edit/perform task</th>
         </tr>
         </thead>
 
         <tfoot>
             <tr>
+                <th id="id-footer-date_created">Date created</th>
                 <th id="id-footer-name">Name</th>
+                <th id="id-footer-who">Who?</th>
                 <th id="id-footer-category">Category</th>
                 <th id="id-footer-unit">Unit</th>
                 <th id="id-footer-duedate">Due date</th>
                 <th id="id-footer-overduedate">Overdue date</th>
                 <th id="id-footer-status">Status</th>
+                <th id="id-footer-taskurl">Edit/perform task</th>
             </tr>
         </tfoot>
 
@@ -50,29 +72,69 @@
                 {% else %}
                     <tr class="success">
                 {% endif %}
+                        <td>{{ task.date_created|date:"d M Y" }}</td>
                         <td>{{ task.name }}</td>
+                        <td>
+                            <div>
+                                <button type="button" class="btn btn-xs btn-default popover-dismiss" data-toggle="popover" title="Users/groups" data-content="
+                                        <p>
+                                            user(s):
+                                            {% for user in task.list_perform_users %}
+                                                {{ user }},
+                                            {% endfor %}
+                                        </p>
+                                        <p>
+                                            group(s):
+                                            {% for group in task.list_perform_groups %}
+                                                {{ group }},
+                                            {% endfor %}
+                                        </p>
+                                    ">
+                                    <span class="glyphicon glyphicon-search"></span>
+                                </button>
+                            </div>
+
+                        </td>
                         <td>{{ task.category }}</td>
                         <td>{{ task.unit }}</td>
                         <td>{{ task.due_date }}</td>
                         <td>{{ task.overdue_date }}</td>
                         <td>{{ task.status }}</td>
+                        <td><a class="btn btn-sm btn-primary" type="button" href="{% url tasks_edit_task task.pk %}">Edit/perform</a></td>
                     </tr>
             {%  endfor %}
         </tbody>
     </table>
 
     <script type='text/javascript'>
+        $('.popover-dismiss').popover({
+            trigger: 'focus'
+        });
+
         $(document).ready(function() {
             // DataTable
-            var table = $('#example').DataTable();
+            var table = $('#task-overview').DataTable( {
+                "columns": [
+                    { "width": "10%" },
+                    { "width": "30%" },
+                    { "width": "5%" },
+                    { "width": "10%" },
+                    { "width": "10%" },
+                    { "width": "10%" },
+                    { "width": "10%" },
+                    { "width": "10%" },
+                    { "width": "10%" }
+                  ],
+                "order": [[ 0, "desc" ]]
+            } );
 
             // Text filters
             var title = $('#id-footer-name').eq( $(this).index() ).text();
-            $('#id-footer-name').html( '<input type="text" placeholder="Search '+title+'" />' );
+            $('#id-footer-name').html( '<input type="text" class="form-control" placeholder="Search '+title+'" />' );
 
-            $( 'input', table.column( 0 ).footer() ).on( 'keyup change', function () {
+            $( 'input', table.column( 1 ).footer() ).on( 'keyup change', function () {
                 table
-                    .column( 0 )
+                    .column( 1 )
                     .search( this.value )
                     .draw();
             } );
@@ -82,15 +144,13 @@
             var selectfiltercolumn2 = $('#id-footer-unit');
             var selectfiltercolumn3 = $('#id-footer-status');
             var selectfiltercolumns = [selectfiltercolumn1, selectfiltercolumn2, selectfiltercolumn3];
-            var selectfiltercolumnnumbers = [1, 2, 5];
+            var selectfiltercolumnnumbers = [3, 4, 7];
 
             $.each(selectfiltercolumns, function ( i ) {
-                console.log(selectfiltercolumnnumbers[i]);
-                console.log($(this).attr("id"));
-
-                var select = $('<select><option value=""></option></select>')
+                var select = $('<select class="input-small"><option value=""></option></select>')
                     .appendTo( $(this).empty() )
                     .on( 'change', function () {
+                        console.log(this);
                         table.column( selectfiltercolumnnumbers[i] )
                             .search( '^'+$(this).val()+'$', true, false )
                             .draw();
@@ -102,4 +162,5 @@
             } );
         } );
     </script>
+{% endblock %}
 
