@@ -4,6 +4,7 @@ from django.contrib.sites.models import Site
 from django.db.models.signals import pre_save, post_save, post_delete
 from django.dispatch import receiver
 from qatrack.qa.models import Frequency, TestListInstance
+from qatrack.tasks.models import Task
 from qatrack.qa.signals import testlist_complete
 
 @receiver(post_save, sender=TestListInstance)
@@ -31,6 +32,17 @@ def site(request):
     if qa_frequencies is None:
         qa_frequencies = list(Frequency.objects.frequency_choices())
 
+    if request.user.is_authenticated():
+        tasks = Task.objects.amount_of_tasks_for_user(request.user)
+    else:
+        tasks = None
+
+    # Tools warning is a overall warning which can be set to True or False to indicate if there is something that
+    # needs attention under the Tools dropdown menu
+    toolswarning = False
+    if tasks > 0:
+        toolswarning = True
+
     return {
         'SITE_NAME': site.name,
         'SITE_URL': site.domain,
@@ -39,4 +51,6 @@ def site(request):
         'FEATURE_REQUEST_URL': settings.FEATURE_REQUEST_URL,
         'QA_FREQUENCIES': qa_frequencies,
         'UNREVIEWED': unreviewed,
+        'TASKS': tasks,
+        'TOOLSWARNING': toolswarning,
     }

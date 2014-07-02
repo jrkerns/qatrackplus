@@ -143,10 +143,24 @@
             <li class="dropdown">
                 <a href="#" class="dropdown-toggle" >
                     Tools
+                    {% if TOOLSWARNING %}
+                        <span title="Warning message, look in the dropdown menu for further information" class="label label-warning">
+                            <i class="icon-warning-sign"></i>
+                        </span>
+                    {% endif %}
                     <b class="caret"></b>
                 </a>
                 <ul class="dropdown-menu">
                     <li><a href="{% url qa_paper_forms_request%}" title="Create a set of paper backup forms"><i class="icon-file"></i> Paper Backup Forms</a></li>
+                    <li class="divider"></li>
+                    <li class="nav-header">Tasks</li>
+                    <li><a href="{% url tasks_my_tasks %}" title="View your tasks">
+                        <i class="icon-tasks"></i> My tasks
+                        <span title="There are currently {{TASKS}} tasks waiting for you" class="label {% if TASKS == 0%}label-success{%else%}label-warning{%endif%} unreviewed-count-wrapper">{{TASKS}}</span></a>
+                    </li>
+                    <li><a href="{% url tasks_add_task %}" title="Add a task"><i class="icon-tasks"></i> Add task</a></li>
+                    <li><a href="{% url tasks_overview %}" title="View all tasks"><i class="icon-tasks"></i> Task overview</a></li>
+
                 </ul>
             </li>
             {% endif %}
