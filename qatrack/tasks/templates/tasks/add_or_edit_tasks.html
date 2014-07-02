@@ -6,8 +6,53 @@
 {% block head_title %}Add/edit or perform task{% endblock %}
 
 {% block body %}
+    <p>
+        <a class="btn btn-primary" type="button" href="{% url tasks_overview %}">Tasks overview</a>
+    </p>
+    {% if not can_edit %}
+        <p>
+        <dl class="dl-horizontal">
+            <dt>Name</dt>
+            <dd>{{ task.name }}</dd>
+            <dt>Category</dt>
+            <dd>{{ task.category }}</dd>
+            <dt>Unit</dt>
+            <dd>{{ task.unit }}</dd>
+            <dt>Due date</dt>
+            <dd>{{ task.due_date }}</dd>
+            <dt>Overdue date</dt>
+            <dd>{{ task.overdue_date }}</dd>
+            <dt>Users edit</dt>
+            <dd>
+                {% for user in task.list_edit_users %}
+                    {{ user }}
+                {% endfor %}
+            </dd>
+            <dt>Groups edit</dt>
+            <dd>
+                {% for group in task.list_edit_groups %}
+                    {{ group }}
+                {% endfor %}
+            </dd>
+            <dt>Users perform</dt>
+            <dd>
+                {% for user in task.list_perform_users %}
+                    {{ user }}
+                {% endfor %}
+            </dd>
+            <dt>Groups perform</dt>
+            <dd>
+                {% for group in task.list_perform_groups %}
+                    {{ group }}
+                {% endfor %}
+            </dd>
+        </dl>
+        </p>
+    {% endif %}<br>
 
+    <p>
     {% crispy form %}
+    </p>
 
     {# datetimepicker #}
     <link rel="stylesheet" type="text/css" href="{% static "datetimepicker/jquery.datetimepicker.css" %}"/>
@@ -36,23 +81,8 @@
             }
 
             if (can_edit == 'False') {
-                {# remove the status option to review #}
-                $("#id_status option[value='reviewed']").remove();
-                {# set the desired fields to readyonly #}
-                $("#id_name").prop('readonly', true);
-                $("#id_category").readonly();
-                $("#id_description").prop('readonly', true);
-                $("#id_unit").readonly();
-                $("#id_due_date").prop('readonly', true);
-                $("#id_overdue_date").prop('readonly', true);
-                $( "button, input[type='button'], input[class='multiselect']").addClass("disabled");
+                $("#id_status option[value='Reviewed']").remove();
             }
-
-            if (can_perform == 'False' && can_edit == 'False') {
-                $("#id_comment_for_reviewer").prop('readonly', true);
-                $(".form-actions").remove();
-            }
-
         });
     </script>
 
