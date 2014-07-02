@@ -1,0 +1,226 @@
+{% extends "site_base.html" %}
+
+{% load staticfiles %}
+{% load crispy_forms_tags %}
+
+{% block head_title %}Perform or review task{% endblock %}
+
+{% block end_body_extra_script %}
+{#        jQuery#}
+    <script src="http://code.jquery.com/jquery-2.0.3.min.js"></script>
+
+{#    datatables.js#}
+    <script type="text/javascript" charset="utf8" src="http://cdn.datatables.net/1.10.0/js/jquery.dataTables.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="http://cdn.datatables.net/1.10.0/css/jquery.dataTables.css">
+    <script type="text/javascript" charset="utf8" src="http://cdn.datatables.net/plug-ins/be7019ee387/integration/bootstrap/3/dataTables.bootstrap.js"></script>
+{% endblock %}
+{% block page_style %}
+{#    bootstrap#}
+    <link rel="stylesheet" type="text/css" href="http://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="http://cdn.datatables.net/plug-ins/be7019ee387/integration/bootstrap/3/dataTables.bootstrap.css">
+
+{#      custom table css #}
+    <link rel="stylesheet" href="{% static "css/tasks.css"  %}" type="text/css"/>
+{% endblock %}
+
+{% block body %}
+    <p>
+        <a class="btn btn-primary" type="button" href="{% url tasks_overview %}">Tasks overview</a>
+    </p>
+
+    <p>
+        <a class="btn btn-primary" type="button" href="{% url tasks_add_task %}">Add task</a>
+    </p>
+
+    <h2>Tasks to perform</h2>
+
+    <table id="perform-tasks" class="table table-bordered tasks" cellspacing="0" width="100%">
+        <thead>
+            <tr>
+                <th>Date created</th>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Unit</th>
+                <th>Due date</th>
+                <th>Overdue date</th>
+                <th>Perform task</th>
+        </tr>
+        </thead>
+
+        <tfoot>
+            <tr>
+                <th id="id-footer-perform-date_created">Date created</th>
+                <th id="id-footer-perform-name">Name</th>
+                <th id="id-footer-perform-category">Category</th>
+                <th id="id-footer-perform-unit">Unit</th>
+                <th id="id-footer-perform-duedate">Due date</th>
+                <th id="id-footer-perform-overduedate">Overdue date</th>
+                <th id="id-footer-perform-taskurl">Perform task</th>
+            </tr>
+        </tfoot>
+
+        <tbody>
+            {% for task in perform_tasks %}
+                {% if task.is_past_overdue and task.status != 'Reviewed' %}
+                    <tr class="danger">
+                {% elif task.is_past_due and task.status != 'Reviewed' %}
+                    <tr class="warning">
+                {% else %}
+                    <tr class="success">
+                {% endif %}
+                        <td>{{ task.date_created|date:"d M Y" }}</td>
+                        <td>{{ task.name }}</td>
+                        <td>{{ task.category }}</td>
+                        <td>{{ task.unit }}</td>
+                        <td>{{ task.due_date }}</td>
+                        <td>{{ task.overdue_date }}</td>
+                        <td><a class="btn btn-sm btn-primary" type="button" href="{% url tasks_edit_task task.pk %}">Perform</a></td>
+                    </tr>
+            {%  endfor %}
+        </tbody>
+    </table>
+
+<h2>Tasks awaiting review</h2>
+
+    <table id="review-tasks" class="table table-bordered tasks" cellspacing="0" width="100%">
+        <thead>
+            <tr>
+                <th>Date created</th>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Unit</th>
+                <th>Due date</th>
+                <th>Overdue date</th>
+                <th>Review task</th>
+        </tr>
+        </thead>
+
+        <tfoot>
+            <tr>
+                <th id="id-footer-review-date_created">Date created</th>
+                <th id="id-footer-review-name">Name</th>
+                <th id="id-footer-review-category">Category</th>
+                <th id="id-footer-review-unit">Unit</th>
+                <th id="id-footer-review-duedate">Due date</th>
+                <th id="id-footer-review-overduedate">Overdue date</th>
+                <th id="id-footer-review-taskurl">Review task</th>
+            </tr>
+        </tfoot>
+
+        <tbody>
+            {% for task in review_tasks %}
+                {% if task.is_past_overdue and task.status != 'Reviewed' %}
+                    <tr class="danger">
+                {% elif task.is_past_due and task.status != 'Reviewed' %}
+                    <tr class="warning">
+                {% else %}
+                    <tr class="success">
+                {% endif %}
+                        <td>{{ task.date_created|date:"d M Y" }}</td>
+                        <td>{{ task.name }}</td>
+                        <td>{{ task.category }}</td>
+                        <td>{{ task.unit }}</td>
+                        <td>{{ task.due_date }}</td>
+                        <td>{{ task.overdue_date }}</td>
+                        <td><a class="btn btn-sm btn-primary" type="button" href="{% url tasks_edit_task task.pk %}">Review</a></td>
+                    </tr>
+            {%  endfor %}
+        </tbody>
+    </table>
+
+    <script type='text/javascript'>
+        $(document).ready(function() {
+            {# SETTINGS FOR PERFORM TABLE #}
+            var table_perform = $('#perform-tasks').DataTable( {
+                "columns": [
+                    { "width": "10%" },
+                    { "width": "40%" },
+                    { "width": "10%" },
+                    { "width": "10%" },
+                    { "width": "10%" },
+                    { "width": "10%" },
+                    { "width": "10%" }
+                  ],
+                "order": [[ 0, "desc" ]]
+            } );
+
+            // Text filters
+            var title = $('#id-footer-perform-name').eq( $(this).index() ).text();
+            $('#id-footer-perform-name').html( '<input type="text" class="form-control" placeholder="Search '+title+'" />' );
+
+            $( 'input', table_perform.column( 1 ).footer() ).on( 'keyup change', function () {
+                table_perform
+                    .column( 1 )
+                    .search( this.value )
+                    .draw();
+            } );
+
+            // Select filters
+            var selectfiltercolumn1 = $('#id-footer-perform-category');
+            var selectfiltercolumn2 = $('#id-footer-perform-unit');
+            var selectfiltercolumns = [selectfiltercolumn1, selectfiltercolumn2];
+            var selectfiltercolumnnumbers = [2, 3];
+
+            $.each(selectfiltercolumns, function ( i ) {
+                var select = $('<select class="input-small"><option value=""></option></select>')
+                    .appendTo( $(this).empty() )
+                    .on( 'change', function () {
+                        table_perform.column( selectfiltercolumnnumbers[i] )
+                            .search( '^'+$(this).val()+'$', true, false )
+                            .draw();
+                    } );
+
+                table_perform.column( selectfiltercolumnnumbers[i] ).data().unique().sort().each( function ( d, j ) {
+                    select.append( '<option value="'+d+'">'+d+'</option>' )
+                } );
+            } );
+
+
+            {# SETTINGS FOR REVIEW TABLE #}
+            var table_review = $('#review-tasks').DataTable( {
+                "columns": [
+                    { "width": "10%" },
+                    { "width": "40%" },
+                    { "width": "10%" },
+                    { "width": "10%" },
+                    { "width": "10%" },
+                    { "width": "10%" },
+                    { "width": "10%" }
+                  ],
+                "order": [[ 0, "desc" ]]
+            } );
+
+
+            // Text filters
+            var title = $('#id-footer-review-name').eq( $(this).index() ).text();
+            $('#id-footer-review-name').html( '<input type="text" class="form-control" placeholder="Search '+title+'" />' );
+
+            $( 'input', table_review.column( 1 ).footer() ).on( 'keyup change', function () {
+                table_review
+                    .column( 1 )
+                    .search( this.value )
+                    .draw();
+            } );
+
+            // Select filters
+            var selectfiltercolumn1 = $('#id-footer-review-category');
+            var selectfiltercolumn2 = $('#id-footer-review-unit');
+            var selectfiltercolumns = [selectfiltercolumn1, selectfiltercolumn2];
+            var selectfiltercolumnnumbers = [2, 3];
+
+            $.each(selectfiltercolumns, function ( i ) {
+                var select = $('<select class="input-small"><option value=""></option></select>')
+                    .appendTo( $(this).empty() )
+                    .on( 'change', function () {
+                        table_review.column( selectfiltercolumnnumbers[i] )
+                            .search( '^'+$(this).val()+'$', true, false )
+                            .draw();
+                    } );
+
+                table_review.column( selectfiltercolumnnumbers[i] ).data().unique().sort().each( function ( d, j ) {
+                    select.append( '<option value="'+d+'">'+d+'</option>' )
+                } );
+            } );
+        } );
+    </script>
+{% endblock %}
