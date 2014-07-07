@@ -39,9 +39,7 @@ def site(request):
 
     # Tools warning is a overall warning which can be set to True or False to indicate if there is something that
     # needs attention under the Tools dropdown menu
-    toolswarning = False
-    if tasks > 0:
-        toolswarning = True
+    toolswarning = tasks > 0
 
     return {
         'SITE_NAME': site.name,
