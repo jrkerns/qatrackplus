@@ -27,7 +27,7 @@ def generate_review_status_context(test_list_instance):
     if test_list_instance.comment:
         comments.append(test_list_instance.comment)
 
-    c = {"statuses": dict(statuses), "comments": comments, "show_icons": settings.ICON_SETTINGS['SHOW_REVIEW_ICONS']}
+    c = {"instance": test_list_instance, "statuses": dict(statuses), "comments": comments, "show_icons": settings.ICON_SETTINGS['SHOW_REVIEW_ICONS']}
 
     return c
 

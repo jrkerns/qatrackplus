@@ -3,10 +3,11 @@ import collections
 
 from django.contrib import messages
 from django.db.models import Q
-from django.http import HttpResponseRedirect, Http404
+from django.http import HttpResponseRedirect, Http404, HttpResponse
+from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.translation import ugettext as _
-from django.views.generic import ListView, TemplateView, DetailView
+from django.views.generic import ListView, TemplateView, DetailView, View
 
 from .. import models
 from . import forms
@@ -18,15 +19,35 @@ from qatrack.units.models import Unit
 from braces.views import PermissionRequiredMixin
 
 
-#============================================================================
 class TestListInstanceDetails(TestListInstanceMixin, DetailView):
     pass
 
 
-#============================================================================
+class TestListInstanceComments(View):
+
+    def get(self, request, **kwargs):
+        try:
+            tli = models.TestListInstance.objects.get(pk=kwargs['pk'])
+        except (models.TestListInstance.DoesNotExist, KeyError):
+            raise Http404
+
+        comments = tli.testinstance_set.exclude(
+            Q(comment="") | Q(comment="na")
+        ).values_list(
+            "unit_test_info__test__name", "comment"
+        )
+
+        context = {
+            "test_list_comment": tli.comment,
+            "comments": comments
+        }
+
+        html = render_to_string('qa/comment_list.html', context)
+        return HttpResponse(html)
+
+
 class ReviewTestListInstance(PermissionRequiredMixin, BaseEditTestListInstance):
-    """
-    This views main purpose is for reviewing a completed :model:`qa.TestListInstance`
+    """ This views main purpose is for reviewing a completed :model:`qa.TestListInstance`
     and updating the :model:`qa.TestInstance`s :model:`qa.TestInstanceStatus`
     """
 
@@ -37,7 +58,6 @@ class ReviewTestListInstance(PermissionRequiredMixin, BaseEditTestListInstance):
     formset_class = forms.ReviewTestInstanceFormSet
     template_name_suffix = "_review"
 
-    #----------------------------------------------------------------------
     def get_form_kwargs(self):
         kwargs = super(ReviewTestListInstance, self).get_form_kwargs()
         kwargs['user'] = self.request.user
@@ -94,7 +114,6 @@ class ReviewTestListInstance(PermissionRequiredMixin, BaseEditTestListInstance):
         return HttpResponseRedirect(self.get_success_url())
 
 
-#====================================================================================
 class UTCReview(PermissionRequiredMixin, UTCList):
     """A simple :view:`qa.base.UTCList` wrapper to check required review permissions"""
 
@@ -105,16 +124,13 @@ class UTCReview(PermissionRequiredMixin, UTCList):
     action_display = "Review"
     active_only = False
 
-    #---------------------------------------------------------------------------
     def get_page_title(self):
         return "Review Test List Data"
 
 
-#====================================================================================
 class UTCFrequencyReview(UTCReview):
     """A simple :view:`qa.review.UTCReview` wrapper to filter by :model:`qa.Frequency`"""
 
-    #----------------------------------------------------------------------
     def get_queryset(self):
         """filter queryset by frequency"""
 
@@ -129,28 +145,23 @@ class UTCFrequencyReview(UTCReview):
 
         return qs.filter(q).distinct()
 
-    #---------------------------------------------------------------------------
     def get_page_title(self):
         return " Review " + ", ".join([x.name for x in self.frequencies]) + " Test Lists"
 
 
-#====================================================================================
 class UTCUnitReview(UTCReview):
     """A simple :view:`qa.review.UTCReview` wrapper to filter by :model:`units.Unit`"""
 
-    #----------------------------------------------------------------------
     def get_queryset(self):
         """filter queryset by frequency"""
         qs = super(UTCUnitReview, self).get_queryset()
         self.units = Unit.objects.filter(number__in=self.kwargs["unit_number"].split("/"))
         return qs.filter(unit__in=self.units).order_by("unit__number")
 
-    #---------------------------------------------------------------------------
     def get_page_title(self):
         return "Review " + ", ".join([x.name for x in self.units]) + " Test Lists"
 
 
-#====================================================================================
 class ChooseUnitForReview(ChooseUnit):
     """Allow user to choose a :model:`units.Unit` to review :model:`qa.TestListInstance`s for"""
 
@@ -158,7 +169,6 @@ class ChooseUnitForReview(ChooseUnit):
     template_name = "units/unittype_choose_for_review.html"
 
 
-#====================================================================================
 class ChooseFrequencyForReview(ListView):
     """Allow user to choose a :model:`qa.Frequency` to review :model:`qa.TestListInstance`s for"""
 
@@ -167,7 +177,6 @@ class ChooseFrequencyForReview(ListView):
     template_name_suffix = "_choose_for_review"
 
 
-#============================================================================
 class Unreviewed(PermissionRequiredMixin, TestListInstances):
     """Display all :model:`qa.TestListInstance`s with all_reviewed=False"""
 
@@ -175,12 +184,10 @@ class Unreviewed(PermissionRequiredMixin, TestListInstances):
     permission_required = "qa.can_review"
     raise_exception = True
 
-    #----------------------------------------------------------------------
     def get_page_title(self):
         return "Unreviewed Test Lists"
 
 
-#============================================================================
 class DueDateOverview(PermissionRequiredMixin, TemplateView):
     """View which :model:`qa.UnitTestCollection` are overdue & coming due"""
 
@@ -196,7 +203,6 @@ class DueDateOverview(PermissionRequiredMixin, TemplateView):
         ("next_month", "Due Next Month"),
     )
 
-    #----------------------------------------------------------------------
     def get_queryset(self):
 
         qs = models.UnitTestCollection.objects.filter(
@@ -224,7 +230,6 @@ class DueDateOverview(PermissionRequiredMixin, TemplateView):
 
         return qs.distinct()
 
-    #----------------------------------------------------------------------
     def get_context_data(self):
         """Group all active :model:`qa.UnitTestCollection` by due date category"""
 
@@ -263,7 +268,6 @@ class DueDateOverview(PermissionRequiredMixin, TemplateView):
         return context
 
 
-#============================================================================
 class Overview(PermissionRequiredMixin, TemplateView):
     """Overall status of the QA Program"""
 
@@ -271,7 +275,6 @@ class Overview(PermissionRequiredMixin, TemplateView):
     permission_required = "qa.can_review"
     raise_exception = True
 
-    #----------------------------------------------------------------------
     def get_queryset(self):
 
         qs = models.UnitTestCollection.objects.filter(
@@ -292,7 +295,6 @@ class Overview(PermissionRequiredMixin, TemplateView):
 
         return qs.distinct()
 
-    #----------------------------------------------------------------------
     def get_context_data(self):
         """Group all active :model:`qa.UnitTestCollection` by unit"""
 
@@ -313,11 +315,9 @@ class Overview(PermissionRequiredMixin, TemplateView):
         return context
 
 
-#====================================================================================
 class UTCInstances(TestListInstances):
     """Show all :model:`qa.TestListInstance`s for a given :model:`qa.UnitTestCollection`"""
 
-    #----------------------------------------------------------------------
     def get_page_title(self):
         try:
             utc = models.UnitTestCollection.objects.get(pk=self.kwargs["pk"])
@@ -325,7 +325,6 @@ class UTCInstances(TestListInstances):
         except:
             raise Http404
 
-    #---------------------------------------------------------------------------
     def get_queryset(self):
         qs = super(UTCInstances, self).get_queryset()
         return qs.filter(unit_test_collection__pk=self.kwargs["pk"])

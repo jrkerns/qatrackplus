@@ -69,6 +69,7 @@ urlpatterns = patterns('',
     # test list instances
     url(r"^session/details/$", base.TestListInstances.as_view(), name="complete_instances"),
     url(r"^session/details/(?P<pk>\d+)/$", review.TestListInstanceDetails.as_view(), name="view_test_list_instance"),
+    url(r"^session/comments/(?P<pk>\d+)?/$", review.TestListInstanceComments.as_view(), name="view_tli_comments"),
     url(r"^session/review/(?P<pk>\d+)/$", review.ReviewTestListInstance.as_view(), name="review_test_list_instance"),
     url(r"^session/unreviewed/$", review.Unreviewed.as_view(), name="unreviewed"),
     url(r"^session/in-progress/$", perform.InProgress.as_view(), name="in_progress"),

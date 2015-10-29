@@ -1,0 +1,12 @@
+<dl class="">
+    <dt>Test List Comment</dt>
+    <dd>{{test_list_comment|default:"<em>N/A</em>"}}</dd>
+    {% for label, comment in comments %}
+        <dt>{{label}}</dt>
+        <dd>{{comment}}</dt>
+    {% empty %}
+        <dt>Test Comments</dt>
+        <dd><em>No test comments or only skipped tests</em></dd>
+    {% endfor %}
+</dl>
+
