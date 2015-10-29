@@ -9,6 +9,27 @@ from django.utils.safestring import mark_safe
 import qatrack.qa.models as models
 register = template.Library()
 
+def generate_review_status_context(test_list_instance):
+
+    if not test_list_instance:
+        return {}
+
+    statuses = collections.defaultdict(lambda: {"count": 0})
+    comments = []
+    for ti in test_list_instance.testinstance_set.all():
+        statuses[ti.status.name]["count"] += 1
+        statuses[ti.status.name]["valid"] = ti.status.valid
+        statuses[ti.status.name]["requires_review"] = ti.status.requires_review
+        statuses[ti.status.name]["reviewed_by"] = test_list_instance.reviewed_by
+        statuses[ti.status.name]["reviewed"] = test_list_instance.reviewed
+        if ti.comment:
+            comments.append(ti.comment)
+    if test_list_instance.comment:
+        comments.append(test_list_instance.comment)
+
+    c = {"statuses": dict(statuses), "comments": comments, "show_icons": settings.ICON_SETTINGS['SHOW_REVIEW_ICONS']}
+
+    return c
 
 @register.simple_tag
 def qa_value_form(form, test_list, include_history=False, include_ref_tols=False, test_info=None):
@@ -100,20 +121,9 @@ def as_pass_fail_status(test_list_instance, show_label=True):
 #----------------------------------------------------------------------
 @register.filter
 def as_review_status(test_list_instance):
-    statuses = collections.defaultdict(lambda: {"count": 0})
-    comment_count = 0
-    for ti in test_list_instance.testinstance_set.all():
-        statuses[ti.status.name]["count"] += 1
-        statuses[ti.status.name]["valid"] = ti.status.valid
-        statuses[ti.status.name]["requires_review"] = ti.status.requires_review
-        statuses[ti.status.name]["reviewed_by"] = test_list_instance.reviewed_by
-        statuses[ti.status.name]["reviewed"] = test_list_instance.reviewed
-        if ti.comment:
-            comment_count += 1
-    if test_list_instance.comment:
-        comment_count += 1
+
+    c = generate_review_status_context(test_list_instance)
     template = get_template("qa/review_status.html")
-    c = Context({"statuses": dict(statuses), "comments": comment_count, "show_icons": settings.ICON_SETTINGS['SHOW_REVIEW_ICONS']})
     return template.render(c)
 
 

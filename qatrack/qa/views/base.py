@@ -12,36 +12,16 @@ from django.template.loader import get_template
 
 from django.views.generic import UpdateView
 
-from qatrack.qa import models
 
 from qatrack.data_tables.views import BaseDataTablesDataSource
+from qatrack.qa import models, utils
+from qatrack.qa.templatetags.qa_tags import generate_review_status_context
 
 from braces.views import PrefetchRelatedMixin, SelectRelatedMixin
 
 logger = logging.getLogger('qatrack.console')
 
 
-def generate_review_status_context(test_list_instance):
-
-    if not test_list_instance:
-        return {}
-
-    statuses = collections.defaultdict(lambda: {"count": 0})
-    comment_count = 0
-    for ti in test_list_instance.testinstance_set.all():
-        statuses[ti.status.name]["count"] += 1
-        statuses[ti.status.name]["valid"] = ti.status.valid
-        statuses[ti.status.name]["requires_review"] = ti.status.requires_review
-        statuses[ti.status.name]["reviewed_by"] = test_list_instance.reviewed_by
-        statuses[ti.status.name]["reviewed"] = test_list_instance.reviewed
-        if ti.comment:
-            comment_count += 1
-    if test_list_instance.comment:
-        comment_count += 1
-
-    c = {"statuses": dict(statuses), "comments": comment_count, "show_icons": settings.ICON_SETTINGS['SHOW_REVIEW_ICONS']}
-
-    return c
 
 
 #============================================================================

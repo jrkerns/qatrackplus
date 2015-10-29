@@ -21,7 +21,17 @@
         {% endfor %}
 
         {% if comments %}
-        <span class="label label-info">{{comments}} <i class="icon-comment"></i></span>
+        <span class="label label-info" rel="popover"
+            data-toggle="popover"
+            data-placement="left"
+            data-html="true"
+            data-trigger="hover"
+            data-content="{% for comment in comments %}&bull; {{comment}}</br>{% endfor %}"
+            data-title="Comments"
+            title
+            >
+            {{comments|length}} <i class="icon-comment"></i>
+        </span>
         {% endif %}
 
     {% endif %}

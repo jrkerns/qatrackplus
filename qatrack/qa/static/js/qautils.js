@@ -257,3 +257,11 @@ var QAUtils = new function() {
 
 }();
 
+$(function(){
+
+    $("body").on("mouseover",  '[rel="popover"]', function(){
+        $('[rel="popover"]').popover();
+        $(this).popover("show");
+    });
+});
+
