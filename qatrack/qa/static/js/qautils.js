@@ -283,7 +283,6 @@ $(function(){
                 content: popoverContent,
                 html: true
             }).popover("show");
-            console.log("showing here");
         };
 
         var content = $(this).attr("data-acontent");
